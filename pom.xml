@@ -6,7 +6,7 @@
 
     <groupId>com.group2.readhdfs</groupId>
     <artifactId>SparkFileTest</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>0.1</version>
 
     <properties>
         <maven.compiler.source>1.8</maven.compiler.source>
@@ -35,18 +35,21 @@
         <!-- Prevent our dummy JAR from being included in Spark distributions or uploaded to YARN -->
         <dependency>
             <groupId>org.apache.spark</groupId>
-            <artifactId>spark-core_2.10</artifactId>
-            <version>2.1.0</version>
+            <artifactId>spark-core_2.12</artifactId>
+            <version>2.4.6</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.spark</groupId>
-            <artifactId>spark-sql_2.10</artifactId>
-            <version>2.1.0</version>
+            <artifactId>spark-sql_2.12</artifactId>
+            <version>2.4.6</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.spark</groupId>
-            <artifactId>spark-hive_2.10</artifactId>
-            <version>2.1.0</version>
+            <artifactId>spark-hive_2.11</artifactId>
+            <version>2.4.6</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.maven.plugins</groupId>
