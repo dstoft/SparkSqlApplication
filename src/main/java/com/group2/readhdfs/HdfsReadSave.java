@@ -1,21 +1,34 @@
 package com.group2.readhdfs;
 
+import com.group2.readhdfs.models.MappedTweet;
+import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.api.java.function.Function;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+
 public class HdfsReadSave {
     public static void main(String[] args) {
+        String currentDirectory = "hdfs://10.123.252.244:9000/user/hadoop/twitter-java-save-txt/";
+        String currentFileName = "V01Sql." + System.currentTimeMillis();
+        String lineSeparator = System.getProperty("line.separator");
+
         //System.out.println("Printing wow!!");
         SparkSession spark = SparkSession.builder().appName("HdfsReadSave").getOrCreate();
 
-        Dataset<Row> rows = spark.read().json("hdfs://10.123.252.244:9000/user/hadoop/twitter-files/coronavirus_tweets_20200127.txt");
+        Dataset<Row> rows = spark.read().json("hdfs://10.123.252.244:9000/user/hadoop/twitter-files/coronavirus_tweets_20200128_2.txt");
 
-        // live-twitter-files/FlumeData.1607083399947
-//        Dataset<Row> rows = spark.read().format("org.apache.spark.sql.avro").load("hdfs://10.123.252.244:9000/user/hadoop/live-twitter-files/FlumeData.1607087977897.avro");
+        JavaRDD<MappedTweet> rdd = rows.limit(100).filter(rows.col("lang").like("en")).javaRDD().map((Function<Row, MappedTweet>) row -> {
+            long id = row.getLong(row.fieldIndex("id"));
+            String text = row.getString(row.fieldIndex("text")).replace(lineSeparator, " ");
+            String timestampMs = row.getString(row.fieldIndex("timestamp_ms"));
+            ArrayList<String> words = new ArrayList<>(Arrays.asList(text.split(" ")));
+            return new MappedTweet(id, text, timestampMs, words);
+        });
 
-        rows.select("created_at","id","text").limit(10).write().format("csv").save("hdfs://10.123.252.244:9000/user/hadoop/twitter-java-save-text");
-
-        //spark.readStream().format("parquet").option("inferschema","true").option("maxFilesPerTrigger", "1").option("header", "true").load()
+        rdd.saveAsTextFile(currentDirectory + currentFileName);
     }
 }
