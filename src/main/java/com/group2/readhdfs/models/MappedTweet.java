@@ -8,19 +8,29 @@ public class MappedTweet implements Serializable {
     public String text;
     public long timeInMs;
     public ArrayList<String> words;
+    public ArrayList<String> positiveWords;
+    public ArrayList<String> negativeWords;
+    public long friendsCount;
+    public boolean hasMentioned;
 
-    public MappedTweet(long id, String text, long timeInMs, ArrayList<String> words) {
+    private MappedTweet(long id, String text, ArrayList<String> words, ArrayList<String> positiveWords, ArrayList<String> negativeWords, long friendsCount, boolean hasMentioned) {
         this.id = id;
         this.text = text;
-        this.timeInMs = timeInMs;
         this.words = words;
+        this.positiveWords = positiveWords;
+        this.negativeWords = negativeWords;
+        this.friendsCount = friendsCount;
+        this.hasMentioned = hasMentioned;
     }
 
-    public MappedTweet(long id, String text, String timeInMs, ArrayList<String> words) throws NumberFormatException {
-        this.id = id;
-        this.text = text;
+    public MappedTweet(long id, String text, long timeInMs, ArrayList<String> words, ArrayList<String> positiveWords, ArrayList<String> negativeWords, long friendsCount, boolean hasMentioned) {
+        this(id, text, words, positiveWords, negativeWords, friendsCount, hasMentioned);
+        this.timeInMs = timeInMs;
+    }
+
+    public MappedTweet(long id, String text, String timeInMs, ArrayList<String> words, ArrayList<String> positiveWords, ArrayList<String> negativeWords, long friendsCount, boolean hasMentioned) throws NumberFormatException {
+        this(id, text, words, positiveWords, negativeWords, friendsCount, hasMentioned);
         this.timeInMs = MapMsTimeString(timeInMs);
-        this.words = words;
     }
 
     private long MapMsTimeString(String timeInMsStr) throws NumberFormatException {
@@ -29,11 +39,18 @@ public class MappedTweet implements Serializable {
 
     @Override
     public String toString() {
+        String wordsJson = words.isEmpty() ? "[]" : "[\"" + String.join("\",\"", words) + "\"]";
+        String positiveWordsJson = positiveWords.isEmpty() ? "[]" : "[\"" + String.join("\",\"", positiveWords) + "\"]";
+        String negativeWordsJson = negativeWords.isEmpty() ? "[]" : "[\"" + String.join("\",\"", negativeWords) + "\"]";
         return "{" +
-                "id:" + id +
-                ", text:'" + text + '\'' +
-                ", timeInMs:" + timeInMs +
-                ", words:" + words +
+                "\"id\":" + id +
+                ", \"text\":\"" + text + '"' +
+                ", \"timeInMs\":" + timeInMs +
+                ", \"words\":" + wordsJson +
+                ", \"positiveWords\":" + positiveWordsJson +
+                ", \"negativeWords\":" + negativeWordsJson +
+                ", \"friendsCount\":" + friendsCount +
+                ", \"hasMentioned\":" + hasMentioned +
                 '}';
     }
 }

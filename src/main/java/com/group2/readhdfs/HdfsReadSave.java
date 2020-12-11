@@ -1,14 +1,12 @@
 package com.group2.readhdfs;
 
 import com.group2.readhdfs.models.MappedTweet;
+import com.group2.readhdfs.models.SentimentLists;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
-
-import java.util.ArrayList;
-import java.util.Arrays;
 
 public class HdfsReadSave {
     public static void main(String[] args) {
@@ -19,38 +17,49 @@ public class HdfsReadSave {
         //System.out.println("Printing wow!!");
         SparkSession spark = SparkSession.builder().appName("HdfsReadSave").getOrCreate();
 
-        Dataset<Row> rows = spark.read().json("hdfs://10.123.252.244:9000/user/hadoop/twitter-files/coronavirus_tweets_20200128_2.txt");
+        Dataset<Row> rows = spark.read().json("hdfs://10.123.252.244:9000/user/hadoop/twitter-files/coronavirus_tweets_20200127.txt");
 
-        Function<Row, Boolean> isRetweetFilter = k -> (!k.isNullAt(k.fieldIndex("retweeted_status")));
+        Function<Row, Boolean> isNotRetweetFilter = k -> (k.isNullAt(k.fieldIndex("retweeted_status")));
         Function<Row, Boolean> isTruncatedFilter = k -> (k.getBoolean(k.fieldIndex("truncated")));
+        Function<MappedTweet, Boolean> containsSentiment = k -> (!k.positiveWords.isEmpty() || !k.negativeWords.isEmpty());
 
         Function<Row, MappedTweet> mapToMappedTweet = row -> {
             long id = row.getLong(row.fieldIndex("id"));
+
             boolean isRetweet = !row.isNullAt(row.fieldIndex("retweeted_status"));
             boolean isTruncated = row.getBoolean(row.fieldIndex("truncated"));
+
+            Row extendedTweetRow = row.getAs(row.fieldIndex("extended_tweet"));
+            Row userRow = row.getAs(row.fieldIndex("user"));
+            Row entitiesRow;
+            if (isTruncated) {
+                entitiesRow = extendedTweetRow.getAs(extendedTweetRow.fieldIndex("entities"));
+            } else {
+                entitiesRow = row.getAs(row.fieldIndex("entities"));
+            }
+
             String text = row.getString(row.fieldIndex("text"));
             if (isTruncated) {
-                Row extendedTweetRow = row.getAs(row.fieldIndex("extended_tweet"));
                 text = extendedTweetRow.getString(extendedTweetRow.fieldIndex("full_text"));
             }
-            if (isRetweet) {
-                Row reweetRow = row.getAs(row.fieldIndex("retweeted_status"));
-                text = removeRetweetFromOriginalTweet(text, reweetRow);
-            }
-            text = text.replace(lineSeparator, " ");
-
             String timestampMs = row.getString(row.fieldIndex("timestamp_ms"));
-            ArrayList<String> words = new ArrayList<>(Arrays.asList(text.split(" ")));
-            return new MappedTweet(id, text, timestampMs, words);
+
+            long friendsCount = userRow.getLong(userRow.fieldIndex("friends_count"));
+            boolean hasMentioned = !entitiesRow.getList(entitiesRow.fieldIndex("user_mentions")).isEmpty();
+
+            text = text.replace(lineSeparator, " ");
+            SentimentLists wordsLists = SentimentService.MapWords(text);
+
+            return new MappedTweet(id, text, timestampMs, wordsLists.words, wordsLists.positiveWords, wordsLists.negativeWords, friendsCount, hasMentioned);
         };
 
         JavaRDD<MappedTweet> rdd = rows
 //                .limit(100)
                 .filter(rows.col("lang").like("en"))
                 .javaRDD()
-//                .filter(isTruncatedFilter)
-//                .filter(isRetweetFilter)
-                .map(mapToMappedTweet);
+                .filter(isNotRetweetFilter)
+                .map(mapToMappedTweet)
+                .filter(containsSentiment);
 
         rdd.saveAsTextFile(currentDirectory + currentFileName);
     }
