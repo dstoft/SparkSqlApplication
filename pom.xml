@@ -30,25 +30,32 @@
         </plugins>
     </build>
 
+    <repositories>
+        <repository>
+            <id>ceon-repo</id>
+            <url>https://maven.ceon.pl/artifactory/repo/</url>
+        </repository>
+    </repositories>
+
 
     <dependencies>
         <!-- Prevent our dummy JAR from being included in Spark distributions or uploaded to YARN -->
         <dependency>
             <groupId>org.apache.spark</groupId>
-            <artifactId>spark-core_2.12</artifactId>
+            <artifactId>spark-core_2.11</artifactId>
             <version>2.4.6</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.spark</groupId>
-            <artifactId>spark-sql_2.12</artifactId>
+            <artifactId>spark-sql_2.11</artifactId>
             <version>2.4.6</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.apache.spark</groupId>
-            <artifactId>spark-hive_2.11</artifactId>
-            <version>2.4.6</version>
+            <groupId>pl.edu.icm.spark-utils</groupId>
+            <artifactId>spark-utils_2.11</artifactId>
+            <version>1.0.1</version>
             <scope>provided</scope>
         </dependency>
         <dependency>

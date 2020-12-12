@@ -2,11 +2,13 @@ package com.group2.readhdfs;
 
 import com.group2.readhdfs.models.MappedTweet;
 import com.group2.readhdfs.models.SentimentLists;
+import org.apache.avro.Schema;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
+import pl.edu.icm.sparkutils.avro.SparkAvroSaver;
 
 public class HdfsReadSave {
     public static void main(String[] args) {
@@ -61,7 +63,12 @@ public class HdfsReadSave {
                 .map(mapToMappedTweet)
                 .filter(containsSentiment);
 
-        rdd.saveAsTextFile(currentDirectory + currentFileName);
+//        rdd.saveAsTextFile(currentDirectory + currentFileName);
+        Schema mappedTweetSchema = buildSchema();
+
+        // https://github.com/CeON/spark-utils
+        SparkAvroSaver avroSaver = new SparkAvroSaver();
+        avroSaver.saveJavaRDD(rdd, mappedTweetSchema, currentDirectory + currentFileName);
     }
 
     private static String removeRetweetFromOriginalTweet(String originalText, Row retweetRow) {
@@ -70,5 +77,25 @@ public class HdfsReadSave {
         retweetText = retweetTextIndex == -1 ? retweetText.substring(0, retweetText.length() / 2) : retweetText.substring(0, retweetTextIndex);
         int retTweetIndex = originalText.indexOf(retweetText);
         return retTweetIndex == -1 ? "RETWEET!!! REMOVAL!!! ERROR!!!" : originalText.substring(0, retTweetIndex);
+    }
+
+    private static Schema buildSchema() {
+        Schema.Parser parser = new Schema.Parser();
+
+        return parser.parse("{\n" +
+                "\t\"namespace\":\"group2.avro\",\n" +
+                "\t\"type\":\"record\",\n" +
+                "\t\"name\":\"MappedTweet\",\n" +
+                "\t\"fields\": [\n" +
+                "\t\t{\"name\":\"id\",\"type\":\"long\"},\n" +
+                "\t\t{\"name\":\"text\",\"type\":\"string\"},\n" +
+                "\t\t{\"name\":\"timeInMs\",\"type\":\"long\"},\n" +
+                "\t\t{\"name\":\"words\",\"type\":{\"type\":\"array\",\"items\":\"string\"},\"default\":[]},\n" +
+                "\t\t{\"name\":\"positiveWords\",\"type\":{\"type\":\"array\",\"items\":\"string\"},\"default\":[]},\n" +
+                "\t\t{\"name\":\"negativeWords\",\"type\":{\"type\":\"array\",\"items\":\"string\"},\"default\":[]},\n" +
+                "\t\t{\"name\":\"friendsCount\",\"type\":\"long\"},\n" +
+                "\t\t{\"name\":\"hasMentioned\",\"type\":\"boolean\"}\n" +
+                "\t]\n" +
+                "}");
     }
 }
