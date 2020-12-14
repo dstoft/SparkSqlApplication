@@ -12,8 +12,10 @@ public class MappedTweet implements Serializable {
     public ArrayList<String> negativeWords;
     public long friendsCount;
     public boolean hasMentioned;
+    public int sentimentScore;
 
-    private MappedTweet(long id, String text, ArrayList<String> words, ArrayList<String> positiveWords, ArrayList<String> negativeWords, long friendsCount, boolean hasMentioned) {
+    private MappedTweet(long id, String text, ArrayList<String> words, ArrayList<String> positiveWords,
+                        ArrayList<String> negativeWords, long friendsCount, boolean hasMentioned, int sentimentScore) {
         this.id = id;
         this.text = text;
         this.words = words;
@@ -21,15 +23,18 @@ public class MappedTweet implements Serializable {
         this.negativeWords = negativeWords;
         this.friendsCount = friendsCount;
         this.hasMentioned = hasMentioned;
+        this.sentimentScore = sentimentScore;
     }
 
-    public MappedTweet(long id, String text, long timeInMs, ArrayList<String> words, ArrayList<String> positiveWords, ArrayList<String> negativeWords, long friendsCount, boolean hasMentioned) {
-        this(id, text, words, positiveWords, negativeWords, friendsCount, hasMentioned);
+    public MappedTweet(long id, String text, long timeInMs, ArrayList<String> words, ArrayList<String> positiveWords,
+                       ArrayList<String> negativeWords, long friendsCount, boolean hasMentioned, int sentimentScore) {
+        this(id, text, words, positiveWords, negativeWords, friendsCount, hasMentioned, sentimentScore);
         this.timeInMs = timeInMs;
     }
 
-    public MappedTweet(long id, String text, String timeInMs, ArrayList<String> words, ArrayList<String> positiveWords, ArrayList<String> negativeWords, long friendsCount, boolean hasMentioned) throws NumberFormatException {
-        this(id, text, words, positiveWords, negativeWords, friendsCount, hasMentioned);
+    public MappedTweet(long id, String text, String timeInMs, ArrayList<String> words, ArrayList<String> positiveWords,
+                       ArrayList<String> negativeWords, long friendsCount, boolean hasMentioned, int sentimentScore) throws NumberFormatException {
+        this(id, text, words, positiveWords, negativeWords, friendsCount, hasMentioned, sentimentScore);
         this.timeInMs = MapMsTimeString(timeInMs);
     }
 
@@ -51,6 +56,7 @@ public class MappedTweet implements Serializable {
                 ", \"negativeWords\":" + negativeWordsJson +
                 ", \"friendsCount\":" + friendsCount +
                 ", \"hasMentioned\":" + hasMentioned +
+                ", \"sentimentScore\":" + sentimentScore +
                 '}';
     }
 }

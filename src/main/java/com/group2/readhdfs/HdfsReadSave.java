@@ -19,7 +19,7 @@ public class HdfsReadSave {
         //System.out.println("Printing wow!!");
         SparkSession spark = SparkSession.builder().appName("HdfsReadSave").getOrCreate();
 
-        Dataset<Row> rows = spark.read().json("hdfs://10.123.252.244:9000/user/hadoop/twitter-files/coronavirus_tweets_20200127.txt");
+        Dataset<Row> rows = spark.read().json("hdfs://10.123.252.244:9000/user/hadoop/twitter-files/coronavirus_tweets_20200302.txt");
 
         Function<Row, Boolean> isNotRetweetFilter = k -> (k.isNullAt(k.fieldIndex("retweeted_status")));
         Function<Row, Boolean> isTruncatedFilter = k -> (k.getBoolean(k.fieldIndex("truncated")));
@@ -34,6 +34,7 @@ public class HdfsReadSave {
             Row extendedTweetRow = row.getAs(row.fieldIndex("extended_tweet"));
             Row userRow = row.getAs(row.fieldIndex("user"));
             Row entitiesRow;
+
             if (isTruncated) {
                 entitiesRow = extendedTweetRow.getAs(extendedTweetRow.fieldIndex("entities"));
             } else {
@@ -52,7 +53,9 @@ public class HdfsReadSave {
             text = text.replace(lineSeparator, " ");
             SentimentLists wordsLists = SentimentService.MapWords(text);
 
-            return new MappedTweet(id, text, timestampMs, wordsLists.words, wordsLists.positiveWords, wordsLists.negativeWords, friendsCount, hasMentioned);
+            int sentimentCounter = wordsLists.positiveWords.size() - wordsLists.negativeWords.size();
+
+            return new MappedTweet(id, text, timestampMs, wordsLists.words, wordsLists.positiveWords, wordsLists.negativeWords, friendsCount, hasMentioned, sentimentCounter );
         };
 
         JavaRDD<MappedTweet> rdd = rows
@@ -94,7 +97,8 @@ public class HdfsReadSave {
                 "\t\t{\"name\":\"positiveWords\",\"type\":{\"type\":\"array\",\"items\":\"string\"},\"default\":[]},\n" +
                 "\t\t{\"name\":\"negativeWords\",\"type\":{\"type\":\"array\",\"items\":\"string\"},\"default\":[]},\n" +
                 "\t\t{\"name\":\"friendsCount\",\"type\":\"long\"},\n" +
-                "\t\t{\"name\":\"hasMentioned\",\"type\":\"boolean\"}\n" +
+                "\t\t {\"name\":\"hasMentioned\",\"type\":\"boolean\"},\n" +
+                "\t\t {\"name\":\"sentimentScore\",\"type\":\"int\"}\n" +
                 "\t]\n" +
                 "}");
     }
