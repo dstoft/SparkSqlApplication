@@ -1,9 +1,8 @@
 package com.group2.readhdfs.models;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 
-public class MappedTweet implements Serializable {
+public class MappedTweet {
     public long id;
     public String text;
     public long timeInMs;
